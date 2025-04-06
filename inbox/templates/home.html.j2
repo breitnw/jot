@@ -1,0 +1,14 @@
+{% extends 'base' %}
+{% block title %}Jot{% endblock %}
+{% block description %}Capture your fleeting notes{% endblock %}
+
+{% block contents %}
+{% for note in notes %}
+<div class="note">
+    <p>{{ note.timestamp }}</p>
+    <p>{{ note.text }}</p>
+    <p>{{ note.priority }}</p>
+    <p>{{ note.dismissed }}</p>
+</div>
+{% endfor %}
+{% endblock %}

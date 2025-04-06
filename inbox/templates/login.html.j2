@@ -1,0 +1,16 @@
+{% extends 'base' %}
+{% block title %}Jot{% endblock %}
+{% block description %}Capture your fleeting notes{% endblock %}
+
+{% block contents %}
+<form method="post">
+    <label for="username">Username</label>
+    <input name="username" id="username" required>
+    <br>
+    <label for="password">Password</label>
+    <input type="password" name="password" id="password" required>
+    <br>
+    <br>
+    <input type="submit" value="Log In">
+</form>
+{% endblock %}

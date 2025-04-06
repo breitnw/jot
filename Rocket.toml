@@ -1,0 +1,9 @@
+[debug]
+address = "127.0.0.1"
+port = 8000
+template_dir = "inbox/templates"
+
+[release]
+address = "127.0.0.1"
+port = 80
+template_dir = "inbox/templates"

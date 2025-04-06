@@ -1,35 +1,34 @@
-use database::{post_note, Priority};
-use rocket::{Build, Rocket};
+use std::path::{Path, PathBuf};
 
-mod database;
+use rocket::{fs::NamedFile, response::Redirect, Build, Rocket};
+use rocket_dyn_templates::{context, Template};
+
+// TODO bulletin?
+
+pub mod auth;
+pub mod database;
 
 #[macro_use]
 extern crate rocket;
 
 #[get("/")]
-fn home() -> String {
-    let username = "burkalicious";
-    let id = database::login(username, "pass2");
-    let mut res = String::new();
-    if let Ok(the_id) = id {
-        res = res + &format!("USERNAME: {}\n", username);
-        res = res + &format!("USER ID: {}\n", the_id);
-        let my_notes = database::query_notes(the_id).unwrap();
-        for note in my_notes {
-            res = res
-                + &format!(
-                    "ID {}, dismissed: {}, priority: {}, [{}] {}\n",
-                    note.post_id,
-                    note.dismissed,
-                    note.priority,
-                    database::format_date(note.timestamp),
-                    note.text,
-                );
-        }
-    } else {
-        res = res + "not yet registered!"
-    }
-    return res;
+fn home(user: auth::User) -> Template {
+    Template::render(
+        "home",
+        context! {
+            notes: database::query_notes(user.id).unwrap()
+        },
+    )
+}
+
+#[get("/", rank = 2)]
+fn home_logged_out() -> Redirect {
+    Redirect::to(uri!(auth::login))
+}
+
+#[get("/static/<file..>")]
+async fn static_file(file: PathBuf) -> Option<NamedFile> {
+    NamedFile::open(Path::new("inbox/static/").join(file)).await.ok()
 }
 
 #[launch]
@@ -45,5 +44,17 @@ fn rocket() -> Rocket<Build> {
     // )
     // .unwrap();
 
-    rocket::build().mount("/", routes![home])
+    rocket::build()
+        .mount(
+            "/",
+            routes![
+                home,
+                home_logged_out,
+                auth::login,
+                auth::login_post,
+                auth::logout,
+                static_file
+            ],
+        )
+        .attach(Template::fairing())
 }

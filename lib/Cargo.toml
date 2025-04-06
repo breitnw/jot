@@ -1,0 +1,8 @@
+[package]
+name = "lib"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+rocket = "0.5.1"
+serde = { version = "1.0.219", features = [ "derive" ] }

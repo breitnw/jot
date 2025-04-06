@@ -1,5 +1,5 @@
 [workspace]
-members = ["scratchpad", "inbox"]
+members = ["scratchpad", "inbox", "lib"]
 
 [workspace.package]
 name = "jot"

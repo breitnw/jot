@@ -1,8 +1,8 @@
-use core::fmt;
-use std::fmt::write;
-
 use chrono::{DateTime, Utc};
+use lib::{Note, Priority};
 use rusqlite::Connection;
+
+use crate::auth::User;
 
 const DB_PATH: &'static str = "db.sqlite";
 
@@ -44,12 +44,36 @@ pub fn register(username: &str, password: &str) -> Result<(), rusqlite::Error> {
 }
 
 /// Attempt to log a user in given a username and password. If successful,
-/// return the user's ID. If unsuccessful, return an error.
-pub fn login(username: &str, password: &str) -> Result<u32, rusqlite::Error> {
+/// returns the user's ID.
+pub fn login(username: &str, password: &str) -> Result<User, rusqlite::Error> {
     let conn = Connection::open(DB_PATH)?;
-    let mut stmt =
-        conn.prepare("SELECT user_id FROM users WHERE username = (?1) AND password = (?2)")?;
-    return stmt.query_row((username, password), |row| Ok(row.get(0)?));
+    let mut stmt = conn.prepare(
+        "SELECT user_id
+         FROM users
+         WHERE username = (?1) AND password = (?2)",
+    )?;
+    return stmt.query_row((username, password), |row| {
+        Ok(User {
+            id: row.get(0)?,
+            name: username.to_owned(),
+        })
+    });
+}
+
+/// Get a user by their ID.
+pub fn get_user(id: u32) -> Result<User, rusqlite::Error> {
+    let conn = Connection::open(DB_PATH)?;
+    let mut stmt = conn.prepare(
+        "SELECT username
+         FROM users
+         WHERE user_id = (?1)",
+    )?;
+    return stmt.query_row((id,), |row| {
+        Ok(User {
+            id,
+            name: row.get(0)?,
+        })
+    });
 }
 
 /// Post a note encoded in `text` to a new entry in the database
@@ -57,53 +81,11 @@ pub fn post_note(user_id: u32, text: &str, priority: Priority) -> Result<(), rus
     let timestamp = Utc::now().timestamp();
     let conn = Connection::open(DB_PATH)?;
     conn.execute(
-        "INSERT INTO notes (text, timestamp, user_id, priority) VALUES (?1, ?2, ?3, ?4)",
+        "INSERT INTO notes (text, timestamp, user_id, priority)
+         VALUES (?1, ?2, ?3, ?4)",
         (text, timestamp, user_id, priority as u32),
     )?;
     Ok(())
-}
-
-/// The priority assigned to a note: either low, medium, or high
-pub enum Priority {
-    LOW,
-    MED,
-    HIGH,
-}
-
-impl TryFrom<u32> for Priority {
-    type Error = ();
-    fn try_from(v: u32) -> Result<Self, Self::Error> {
-        match v {
-            x if x == Priority::LOW as u32 => Ok(Priority::LOW),
-            x if x == Priority::MED as u32 => Ok(Priority::MED),
-            x if x == Priority::HIGH as u32 => Ok(Priority::HIGH),
-            _ => Err(()),
-        }
-    }
-}
-
-impl std::fmt::Display for Priority {
-    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            formatter,
-            "{}",
-            match self {
-                Self::HIGH => "HIGH",
-                Self::MED => "MED",
-                Self::LOW => "LOW",
-            }
-        )
-    }
-}
-
-/// A single note and its metadata
-pub struct Note {
-    pub post_id: u32,
-    pub user_id: u32,
-    pub text: String,
-    pub timestamp: i64,
-    pub priority: Priority,
-    pub dismissed: bool,
 }
 
 /// Query all of a user's notes, with the most recent note first

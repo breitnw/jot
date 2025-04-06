@@ -5,5 +5,7 @@ edition = "2021"
 
 [dependencies]
 chrono = "0.4.40"
-rocket = "0.5.1"
+rocket = { version = "0.5.1", features = ["secrets"] }
 rusqlite = "0.34.0"
+lib = { path = "../lib" }
+rocket_dyn_templates = { version = "0.2.0", features = ["minijinja"] }
