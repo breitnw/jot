@@ -15,6 +15,10 @@ in pkgs.mkShell rec {
 
     # libraries
     sqlite
+    SDL2
+    SDL2_ttf
+    SDL2_image
+    openssl
 
     # other tools
     sqlite-web

@@ -56,12 +56,22 @@ pub async fn logout(jar: &CookieJar<'_>) -> Redirect {
 pub struct LoginData<'r> {
     username: &'r str,
     password: &'r str,
+    submit: &'r str,
 }
 
 #[post("/login", data = "<input>")]
 pub async fn login_post(input: Form<LoginData<'_>>, jar: &CookieJar<'_>) -> Redirect {
-    let user_result = database::login(input.username, input.password);
-    if let Ok(user) = user_result {
+    let user_res = match input.submit {
+        "Register" => {
+            database::register(input.username, input.password)
+                .and_then(|_| database::login(input.username, input.password))
+        }
+        "Log In" => {
+            database::login(input.username, input.password)
+        }
+        _ => panic!("invalid action")
+    };
+    if let Ok(user) = user_res {
         dbg!("login succeeded!");
         jar.add_private(Cookie::new("user_id", user.id.to_string()));
         Redirect::to(uri!(crate::home))
@@ -71,3 +81,18 @@ pub async fn login_post(input: Form<LoginData<'_>>, jar: &CookieJar<'_>) -> Redi
         Redirect::to(uri!(login))
     }
 }
+
+// #[post("/register", data = "<input>")]
+// pub async fn register_post(input: Form<LoginData<'_>>, jar: &CookieJar<'_>) -> Redirect {
+//     let user_result = database::register(input.username, input.password)
+//         .and_then(|_| database::login(input.username, input.password));
+//     if let Ok(user) = user_result {
+//         dbg!("login succeeded!");
+//         jar.add_private(Cookie::new("user_id", user.id.to_string()));
+//         Redirect::to(uri!(crate::home))
+//     } else {
+//         // TODO add error message if login fails
+//         dbg!("login failed!");
+//         Redirect::to(uri!(login))
+//     }
+// }

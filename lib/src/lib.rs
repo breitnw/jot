@@ -12,8 +12,16 @@ pub struct Note {
     pub dismissed: bool,
 }
 
-/// The priority assigned to a note: either low, medium, or high
+/// A request to post a note
 #[derive(Serialize, Deserialize, Debug)]
+pub struct NotePost {
+    pub user_id: u32,
+    pub text: String,
+    pub priority: Priority,
+}
+
+/// The priority assigned to a note: either low, medium, or high
+#[derive(Serialize, Deserialize, Debug, Clone, Copy)]
 pub enum Priority {
     LOW,
     MED,

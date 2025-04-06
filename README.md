@@ -16,3 +16,4 @@ Jot runs on Rust. The following libraries were used to create it:
 - [Chrono](https://crates.io/crates/chrono), for date and time handling
 - [Rusqlite](https://crates.io/crates/rusqlite), for managing notes and users in a SQLite database
 - [MiniJinja](https://github.com/mitsuhiko/minijinja), for HTML templating
+- [Reqwest](https://github.com/seanmonstar/reqwest), for making HTTP requests from the scratchpad

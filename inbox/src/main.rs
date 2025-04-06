@@ -1,6 +1,6 @@
 use std::path::{Path, PathBuf};
 
-use rocket::{fs::NamedFile, response::Redirect, Build, Rocket};
+use rocket::{fs::NamedFile, response::Redirect, serde::json::Json, Build, Rocket};
 use rocket_dyn_templates::{context, Template};
 
 // TODO bulletin?
@@ -37,6 +37,11 @@ async fn dismiss(note_id: u32) {
     database::dismiss_note(note_id).unwrap();
 }
 
+#[post("/post", data = "<input>")]
+async fn post(input: Json<lib::NotePost>) {
+    database::post_note(input.user_id, &input.text, input.priority).unwrap();
+}
+
 #[launch]
 fn rocket() -> Rocket<Build> {
     database::init().unwrap();
@@ -61,6 +66,7 @@ fn rocket() -> Rocket<Build> {
                 auth::logout,
                 static_file,
                 dismiss,
+                post,
             ],
         )
         .attach(Template::fairing())
