@@ -18,7 +18,7 @@ pub fn init() -> Result<(), rusqlite::Error> {
     )?;
     conn.execute(
         "CREATE TABLE IF NOT EXISTS notes (
-        post_id INTEGER PRIMARY KEY,
+        note_id INTEGER PRIMARY KEY,
         text TEXT NOT NULL,
         timestamp INTEGER NOT NULL,
         dismissed BOOLEAN NOT NULL DEFAULT FALSE,
@@ -88,21 +88,34 @@ pub fn post_note(user_id: u32, text: &str, priority: Priority) -> Result<(), rus
     Ok(())
 }
 
-/// Query all of a user's notes, with the most recent note first
+/// Dismiss the note with id `note-id`
+pub fn dismiss_note(note_id: u32) -> Result<(), rusqlite::Error> {
+    let conn = Connection::open(DB_PATH)?;
+    conn.execute(
+        "UPDATE notes
+         SET dismissed = TRUE
+         WHERE note_id = (?1)",
+        (note_id,),
+    )?;
+    Ok(())
+}
+
+/// Query all of a user's notes, ordered by priority. Within each priority
+/// level, notes are ordered by timestamp. Does not include dismissed notes.
 pub fn query_notes(user_id: u32) -> Result<Vec<Note>, rusqlite::Error> {
     let conn = Connection::open(DB_PATH)?;
     let mut stmt = conn.prepare(
-        "SELECT post_id, text, timestamp, priority, dismissed
+        "SELECT note_id, text, timestamp, priority, dismissed
          FROM notes
-         WHERE user_id = (?1)
-         ORDER BY timestamp DESC",
+         WHERE user_id = (?1) AND dismissed = FALSE
+         ORDER BY priority DESC, timestamp DESC;",
     )?;
     let note_iter = stmt.query_map([user_id], |row| {
         Ok(Note {
             user_id,
-            post_id: row.get(0)?,
+            note_id: row.get(0)?,
             text: row.get(1)?,
-            timestamp: row.get(2)?,
+            timestamp: format_date(row.get(2)?),
             priority: Priority::try_from(row.get::<_, u32>(3)?)
                 .expect("Unexpected priority value!"),
             dismissed: row.get(4)?,
@@ -115,6 +128,6 @@ pub fn query_notes(user_id: u32) -> Result<Vec<Note>, rusqlite::Error> {
 pub fn format_date(timestamp: i64) -> String {
     DateTime::from_timestamp(timestamp, 0)
         .unwrap()
-        .format("%d/%m/%Y %H:%M")
+        .format("%b %d, %Y | %H:%M")
         .to_string()
 }

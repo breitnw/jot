@@ -17,9 +17,16 @@
 
     <body>
         <div id="contents">
-            <a href="/">
-                <h1>jot</h1>
-            </a>
+            {% if username is defined %}
+            <span style="float: right;">
+                {{ username }}
+                <a href="/logout">(logout)</a>
+            </span>
+            {% endif %}
+
+            <h1>
+                <a href="/">jot</a>
+            </h1>
             {% block contents %}{% endblock %}
         </div>
         <footer>

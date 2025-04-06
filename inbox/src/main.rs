@@ -12,17 +12,18 @@ pub mod database;
 extern crate rocket;
 
 #[get("/")]
-fn home(user: auth::User) -> Template {
+async fn home_authenticated(user: auth::User) -> Template {
     Template::render(
         "home",
         context! {
-            notes: database::query_notes(user.id).unwrap()
+            username: user.name,
+            notes: database::query_notes(user.id).unwrap(),
         },
     )
 }
 
 #[get("/", rank = 2)]
-fn home_logged_out() -> Redirect {
+async fn home() -> Redirect {
     Redirect::to(uri!(auth::login))
 }
 
@@ -31,16 +32,20 @@ async fn static_file(file: PathBuf) -> Option<NamedFile> {
     NamedFile::open(Path::new("inbox/static/").join(file)).await.ok()
 }
 
+#[post("/dismiss/<note_id>")]
+async fn dismiss(note_id: u32) {
+    database::dismiss_note(note_id).unwrap();
+}
+
 #[launch]
 fn rocket() -> Rocket<Build> {
     database::init().unwrap();
 
-    // database::register("breitnw", "pass1").unwrap();
-    // database::register("burkalicious", "pass2").unwrap();
+    // use lib::Priority;
     // database::post_note(
     //     2,
-    //     "hi, this is my first post with a higher priority!",
-    //     Priority::HIGH,
+    //     "this is my first post with a medium priority!",
+    //     Priority::MED,
     // )
     // .unwrap();
 
@@ -48,12 +53,14 @@ fn rocket() -> Rocket<Build> {
         .mount(
             "/",
             routes![
+                home_authenticated,
                 home,
-                home_logged_out,
+                auth::login_authenticated,
                 auth::login,
                 auth::login_post,
                 auth::logout,
-                static_file
+                static_file,
+                dismiss,
             ],
         )
         .attach(Template::fairing())

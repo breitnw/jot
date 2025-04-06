@@ -5,6 +5,7 @@
 
 html {
     font-family: orbit;
+    font-variant-ligatures: no-common-ligatures;
 }
 
 #contents {
@@ -35,13 +36,30 @@ footer a {
 
 .note {
     border: 4px solid black;
-    padding: 1em;
+    padding: 0 1.25em;
     margin-bottom: 1em;
     border-radius: 15px;
 }
 
+.note button {
+    background: none;
+    border: none;
+    padding: 0;
+    font-size: 1em;
+    transition: all .2s ease-in-out;
+}
+
+.note button:hover {
+    transform: scale(1.5);
+}
+
+.date {
+    /* font-style: italic; */
+    color: gray;
+}
+
 .HIGH {
-    background-color: palevioletred;
+    background-color: #f9c0d1;
 }
 
 .MED {
@@ -49,5 +67,5 @@ footer a {
 }
 
 .LOW {
-    background-color: lightgray;
+    background-color: white;
 }

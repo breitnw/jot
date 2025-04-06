@@ -1,14 +1,33 @@
+<!doctype html>
+
 {% extends 'base' %}
-{% block title %}Jot{% endblock %}
-{% block description %}Capture your fleeting notes{% endblock %}
+{% block title %}jot | home{% endblock %}
+{% block description %}Capture your fleeting thoughts{% endblock %}
 
 {% block contents %}
 {% for note in notes %}
-<div class="note">
-    <p>{{ note.timestamp }}</p>
+<div class="note {{ note.priority }}" id="note-id-{{ note.note_id }}">
+    <p>
+        <span class="date">{{ note.timestamp }}</span>
+        <span style="float:right;">
+            <button type="button" onclick="dismissNote({{ note.note_id }})">
+                <i class="fa-solid fa-box-archive"></i>
+            </button>
+        </span>
+    </p>
     <p>{{ note.text }}</p>
-    <p>{{ note.priority }}</p>
-    <p>{{ note.dismissed }}</p>
 </div>
 {% endfor %}
+<script>
+    function dismissNote(noteID) {
+        var xhttp = new XMLHttpRequest();
+        xhttp.onreadystatechange = function() {
+            if (this.readyState == 4 && this.status == 200) {
+                document.getElementById("note-id-" + noteID).style.display = "none";
+            }
+        };
+        xhttp.open("POST", "dismiss/" + noteID)
+        xhttp.send();
+    }
+</script>
 {% endblock %}

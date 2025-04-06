@@ -4,10 +4,10 @@ use serde::{Deserialize, Serialize};
 /// A single note and its metadata
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Note {
-    pub post_id: u32,
+    pub note_id: u32,
     pub user_id: u32,
     pub text: String,
-    pub timestamp: i64,
+    pub timestamp: String,
     pub priority: Priority,
     pub dismissed: bool,
 }

@@ -21,8 +21,6 @@ impl<'r> FromRequest<'r> for User {
     type Error = ();
 
     async fn from_request(req: &'r Request<'_>) -> request::Outcome<Self, Self::Error> {
-        let id = req.cookies().get_private("user_id").unwrap().value().parse::<u32>().ok();
-        dbg!(database::get_user(id.unwrap()).unwrap().name);
         req.cookies()
             .get_private("user_id")
             .and_then(|cookie| cookie.value().parse().ok())
@@ -32,15 +30,24 @@ impl<'r> FromRequest<'r> for User {
 }
 
 #[get("/login")]
-pub fn login() -> Template {
+pub async fn login_authenticated(user: User) -> Template {
+    Template::render(
+        "login",
+        context! { username: user.name },
+    )
+}
+
+#[get("/login", rank = 2)]
+pub async fn login() -> Template {
     Template::render(
         "login",
         context! { },
     )
 }
 
+// TODO add logout button
 #[get("/logout")]
-pub fn logout(jar: &CookieJar) -> Redirect {
+pub async fn logout(jar: &CookieJar<'_>) -> Redirect {
     jar.remove_private("user_id");
     Redirect::to(uri!(login))
 }
@@ -52,7 +59,7 @@ pub struct LoginData<'r> {
 }
 
 #[post("/login", data = "<input>")]
-pub fn login_post(input: Form<LoginData<'_>>, jar: &CookieJar<'_>) -> Redirect {
+pub async fn login_post(input: Form<LoginData<'_>>, jar: &CookieJar<'_>) -> Redirect {
     let user_result = database::login(input.username, input.password);
     if let Ok(user) = user_result {
         dbg!("login succeeded!");
