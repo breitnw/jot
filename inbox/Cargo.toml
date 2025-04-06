@@ -1,0 +1,9 @@
+[package]
+name = "inbox"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+chrono = "0.4.40"
+rocket = "0.5.1"
+rusqlite = "0.34.0"

@@ -1,0 +1,7 @@
+[workspace]
+members = ["scratchpad", "inbox"]
+
+[workspace.package]
+name = "jot"
+version = "0.0.1"
+authors = [ "Nick Breitling" ]
