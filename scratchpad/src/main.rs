@@ -32,10 +32,13 @@ fn copy_unscaled<T: sdl2::render::RenderTarget>(
 
 const SCREEN_WIDTH: u32 = 320;
 const SCREEN_HEIGHT: u32 = 568;
+const INBOX_URL: &'static str = "https://jot.mndco11age.xyz";
+const USER_ID: u32 = 1; // FIXME
 
 fn main() {
     let sdl_context = sdl2::init().unwrap();
     let video_subsystem = sdl_context.video().unwrap();
+    video_subsystem.text_input();
 
     let window = video_subsystem
         .window("jot | scratchpad", SCREEN_WIDTH, SCREEN_HEIGHT)
@@ -55,24 +58,24 @@ fn main() {
     // program state enumeration, containing buffers for the text the user
     // is currently typing
     enum TextState {
-        Login { UserBuf: String, PassBuf: String },
-        Scratchpad { TextBuf: String },
+        Login { userbuf: String, passbuf: String },
+        Scratchpad { textbuf: String },
     }
     impl TextState {
         fn login() -> Self {
             Self::Login {
-                UserBuf: String::new(),
-                PassBuf: String::new(),
+                userbuf: String::new(),
+                passbuf: String::new(),
             }
         }
         fn scratchpad() -> Self {
             Self::Scratchpad {
-                TextBuf: String::new(),
+                textbuf: String::new(),
             }
         }
     }
     // the current program state
-    let mut state = TextState::login();
+    let mut state = TextState::scratchpad();
     let mut priority: Priority = Priority::LOW;
 
     // texture assets
@@ -120,6 +123,8 @@ fn main() {
             button_height,
         );
 
+        let client = reqwest::blocking::Client::new();
+
         // process input events
         for event in event_pump.poll_iter() {
             match event {
@@ -128,18 +133,27 @@ fn main() {
                     timestamp,
                     window_id,
                     text,
-                } => {
-                    // pass
-                }
-                Event::TextEditing {
-                    timestamp,
-                    window_id,
-                    text,
-                    start,
-                    length,
-                } => {
-                    // pass
-                }
+                } => match &mut state {
+                    TextState::Login { userbuf, passbuf } => {
+                        todo!()
+                    }
+                    TextState::Scratchpad { textbuf } => textbuf.push_str(&text),
+                },
+                // Event::TextEditing {
+                //     timestamp,
+                //     window_id,
+                //     text,
+                //     start,
+                //     length,
+                // } => match &mut state {
+                //     TextState::Login { userbuf, passbuf } => {
+                //         todo!()
+                //     }
+                //     TextState::Scratchpad { textbuf } => {
+                //         textbuf.clear();
+                //         textbuf.push_str(&text)
+                //     }
+                // },
                 Event::MouseButtonDown {
                     timestamp,
                     window_id,
@@ -150,12 +164,29 @@ fn main() {
                     y,
                 } => {
                     let p = Point::new(x, y);
-                    if priority_button_rect.contains_point(p) {
-                        // the priority button was pressed
-                        priority = ((priority as u32 + 1) % 3).try_into().unwrap();
-                    } else if jot_button_rect.contains_point(p) {
-                        // the jot button was pressed
-                        let res = reqwest::blocking::get("");
+                    match &mut state {
+                        TextState::Login { userbuf, passbuf } => {
+                            todo!()
+                        }
+                        TextState::Scratchpad { textbuf } => {
+                            if priority_button_rect.contains_point(p) {
+                                // the priority button was pressed
+                                priority = ((priority as u32 + 1) % 3).try_into().unwrap();
+                            } else if jot_button_rect.contains_point(p) {
+                                // the jot button was pressed
+                                let req = lib::NotePost {
+                                    user_id: 2, // FIXME
+                                    text: textbuf.clone(),
+                                    priority,
+                                };
+                                let res = client
+                                    .post(&format!("{}/post", INBOX_URL))
+                                    .json(&req)
+                                    .send()
+                                    .unwrap();
+                                textbuf.clear();
+                            }
+                        }
                     }
                 }
                 _ => {}
@@ -174,12 +205,16 @@ fn main() {
             .copy(&priority_tex, None, priority_button_rect)
             .unwrap();
 
-        let tb_tex = text_box("hello world!", &font, &texture_creator);
-        copy_unscaled(
-            &mut canvas,
-            Point::new(EDGE_PADDING as i32, EDGE_PADDING as i32),
-            &tb_tex,
-        );
+        if let TextState::Scratchpad { textbuf } = &state {
+            if !textbuf.is_empty() {
+                let tb_tex = text_box(&textbuf, &font, &texture_creator);
+                copy_unscaled(
+                    &mut canvas,
+                    Point::new(EDGE_PADDING as i32, EDGE_PADDING as i32),
+                    &tb_tex,
+                );
+            }
+        }
 
         canvas.present();
         std::thread::sleep(Duration::new(0, 1_000_000_000u32 / 60));
