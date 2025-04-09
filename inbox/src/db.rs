@@ -61,7 +61,7 @@ pub fn login(username: &str, password: &str) -> Result<User, rusqlite::Error> {
 }
 
 /// Get a user by their ID.
-pub fn get_user(id: u32) -> Result<User, rusqlite::Error> {
+pub fn get_user(id: u64) -> Result<User, rusqlite::Error> {
     let conn = Connection::open(DB_PATH)?;
     let mut stmt = conn.prepare(
         "SELECT username
@@ -77,7 +77,11 @@ pub fn get_user(id: u32) -> Result<User, rusqlite::Error> {
 }
 
 /// Post a note encoded in `text` to a new entry in the database
-pub fn post_note(user_id: u32, text: &str, priority: Priority) -> Result<(), rusqlite::Error> {
+pub fn post_note(
+    user_id: u64,
+    text: &str,
+    priority: Priority,
+) -> Result<(), rusqlite::Error> {
     let timestamp = Utc::now().timestamp();
     let conn = Connection::open(DB_PATH)?;
     conn.execute(
@@ -88,21 +92,22 @@ pub fn post_note(user_id: u32, text: &str, priority: Priority) -> Result<(), rus
     Ok(())
 }
 
-/// Dismiss the note with id `note-id`
-pub fn dismiss_note(note_id: u32) -> Result<(), rusqlite::Error> {
+/// Dismiss the note with id `note-id`, asserting that the corresponding
+/// user has `user_id`
+pub fn dismiss_note(note_id: u64, user_id: u64) -> Result<(), rusqlite::Error> {
     let conn = Connection::open(DB_PATH)?;
     conn.execute(
         "UPDATE notes
          SET dismissed = TRUE
-         WHERE note_id = (?1)",
-        (note_id,),
+         WHERE note_id = (?1) AND user_id = (?2)",
+        (note_id, user_id),
     )?;
     Ok(())
 }
 
 /// Query all of a user's notes, ordered by priority. Within each priority
 /// level, notes are ordered by timestamp. Does not include dismissed notes.
-pub fn query_notes(user_id: u32) -> Result<Vec<Note>, rusqlite::Error> {
+pub fn query_notes(user_id: u64) -> Result<Vec<Note>, rusqlite::Error> {
     let conn = Connection::open(DB_PATH)?;
     let mut stmt = conn.prepare(
         "SELECT note_id, text, timestamp, priority, dismissed

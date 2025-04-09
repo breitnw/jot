@@ -5,17 +5,26 @@
 {% block description %}Capture your fleeting thoughts{% endblock %}
 
 {% block contents %}
+<span style="float: right;">
+    {{ user.name }} (<a href="/logout">logout</a>)
+</span>
+<h1>
+    <a href="/">
+        <img src="static/pencil-big.png" alt="logo" class="home-pencil">
+        jot
+    </a>
+</h1>
 {% for note in notes %}
-<div class="note {{ note.priority }}" id="note-id-{{ note.note_id }}">
-    <p>
+<div class="note box {{ note.priority }}" id="note-id-{{ note.note_id }}">
+    <div>
         <span class="date">{{ note.timestamp }}</span>
         <span style="float:right;">
             <button type="button" onclick="dismissNote({{ note.note_id }})">
                 <i class="fa-solid fa-box-archive"></i>
             </button>
         </span>
-    </p>
-    <p>{{ note.text }}</p>
+    </div>
+    <div>{{ note.text }}</div>
 </div>
 {% endfor %}
 <script>

@@ -2,17 +2,19 @@ use rocket::{
     form::Form,
     http::{Cookie, CookieJar, Status},
     outcome::IntoOutcome,
-    request::{self, FromRequest},
-    response::Redirect,
+    request::{self, FlashMessage, FromRequest},
+    response::{Flash, Redirect},
+    serde::{Deserialize, Serialize},
     Request,
 };
 use rocket_dyn_templates::{context, Template};
 
-use crate::database;
+use crate::db;
 
 /// A user and their ID
+#[derive(Deserialize, Serialize, Debug)]
 pub struct User {
-    pub id: u32,
+    pub id: u64,
     pub name: String,
 }
 
@@ -20,79 +22,105 @@ pub struct User {
 impl<'r> FromRequest<'r> for User {
     type Error = ();
 
-    async fn from_request(req: &'r Request<'_>) -> request::Outcome<Self, Self::Error> {
+    async fn from_request(
+        req: &'r Request<'_>,
+    ) -> request::Outcome<Self, Self::Error> {
         req.cookies()
             .get_private("user_id")
             .and_then(|cookie| cookie.value().parse().ok())
-            .and_then(|id| database::get_user(id).ok())
+            .and_then(|id| db::get_user(id).ok())
             .or_forward(Status::Unauthorized)
     }
 }
 
 #[get("/login")]
-pub async fn login_authenticated(user: User) -> Template {
-    Template::render(
-        "login",
-        context! { username: user.name },
-    )
+pub async fn login(
+    user: Option<User>,
+    error: Option<FlashMessage<'_>>,
+) -> Template {
+    Template::render("login", context! { user: user, error: error })
 }
 
-#[get("/login", rank = 2)]
-pub async fn login() -> Template {
-    Template::render(
-        "login",
-        context! { },
-    )
-}
-
-// TODO add logout button
-#[get("/logout")]
-pub async fn logout(jar: &CookieJar<'_>) -> Redirect {
-    jar.remove_private("user_id");
-    Redirect::to(uri!(login))
+#[get("/register")]
+pub async fn register(
+    user: Option<User>,
+    error: Option<FlashMessage<'_>>,
+) -> Template {
+    Template::render("register", context! { user: user, error: error })
 }
 
 #[derive(FromForm)]
 pub struct LoginData<'r> {
     username: &'r str,
     password: &'r str,
-    submit: &'r str,
 }
 
 #[post("/login", data = "<input>")]
-pub async fn login_post(input: Form<LoginData<'_>>, jar: &CookieJar<'_>) -> Redirect {
-    let user_res = match input.submit {
-        "Register" => {
-            database::register(input.username, input.password)
-                .and_then(|_| database::login(input.username, input.password))
-        }
-        "Log In" => {
-            database::login(input.username, input.password)
-        }
-        _ => panic!("invalid action")
-    };
+pub async fn login_post(
+    input: Form<LoginData<'_>>,
+    jar: &CookieJar<'_>,
+) -> Result<Redirect, Flash<Redirect>> {
+    let user_res = db::login(input.username, input.password);
     if let Ok(user) = user_res {
-        dbg!("login succeeded!");
         jar.add_private(Cookie::new("user_id", user.id.to_string()));
-        Redirect::to(uri!(crate::home))
+        Ok(Redirect::to(uri!(crate::home)))
     } else {
-        // TODO add error message if login fails
-        dbg!("login failed!");
-        Redirect::to(uri!(login))
+        Err(Flash::error(
+            Redirect::to(uri!(login)),
+            "invalid username or password",
+        ))
     }
 }
 
-// #[post("/register", data = "<input>")]
-// pub async fn register_post(input: Form<LoginData<'_>>, jar: &CookieJar<'_>) -> Redirect {
-//     let user_result = database::register(input.username, input.password)
-//         .and_then(|_| database::login(input.username, input.password));
-//     if let Ok(user) = user_result {
-//         dbg!("login succeeded!");
-//         jar.add_private(Cookie::new("user_id", user.id.to_string()));
-//         Redirect::to(uri!(crate::home))
-//     } else {
-//         // TODO add error message if login fails
-//         dbg!("login failed!");
-//         Redirect::to(uri!(login))
-//     }
-// }
+#[derive(FromForm)]
+pub struct RegisterData<'r> {
+    username: &'r str,
+    password: &'r str,
+    password_confirm: &'r str,
+}
+
+#[post("/register", data = "<input>")]
+pub async fn register_post(
+    input: Form<RegisterData<'_>>,
+    jar: &CookieJar<'_>,
+) -> Result<Redirect, Flash<Redirect>> {
+    // ensure password and confirmation password match
+    if input.password != input.password_confirm {
+        return Err(Flash::error(
+            Redirect::to(uri!(register)),
+            "passwords do not match",
+        ));
+    }
+    // ensure password is long enough
+    if input.password.len() < 8 {
+        return Err(Flash::error(
+            Redirect::to(uri!(register)),
+            "password must be 8 characters or longer",
+        ));
+    }
+    // register the user
+    let register_res = db::register(input.username, input.password);
+    if register_res.is_err() {
+        return Err(Flash::error(
+            Redirect::to(uri!(register)),
+            &format!("username \"{}\" is taken", input.username),
+        ));
+    }
+    // log the user in
+    let user_res = db::login(input.username, input.password);
+    if let Ok(user) = user_res {
+        jar.add_private(Cookie::new("user_id", user.id.to_string()));
+        Ok(Redirect::to(uri!(crate::home)))
+    } else {
+        Err(Flash::error(
+            Redirect::to(uri!(login)),
+            "invalid username or password",
+        ))
+    }
+}
+
+#[get("/logout")]
+pub async fn logout(jar: &CookieJar<'_>) -> Redirect {
+    jar.remove_private("user_id");
+    Redirect::to(uri!(login))
+}

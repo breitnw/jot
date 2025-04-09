@@ -13,6 +13,11 @@ in pkgs.mkShell rec {
     rust-analyzer
     clippy
 
+    # web tools
+    html-tidy
+    stylelint
+    jsbeautifier
+
     # libraries
     sqlite
     SDL2

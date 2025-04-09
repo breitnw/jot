@@ -1,16 +1,17 @@
 <!doctype html>
 
 {% extends 'base' %}
-{% block title %}jot | login{% endblock %}
+{% block title %}jot | register{% endblock %}
 {% block description %}Capture your fleeting notes{% endblock %}
 
 {% block contents %}
 <div class="centered-form">
     <h2>
         <img src="static/pencil.png" alt="logo" class="form-pencil">
-        welcome back!</h2>
+        welcome!
+    </h2>
     <p>
-    Enter your username and password to log in. Don't have an account yet? Register <a href="/register">here</a>.
+    Enter a username and password to create an account. Already have one? Log in <a href="/login">here</a>.
     </p>
     {% if error != none %}
     <p style="color:red; font-size:small;">
@@ -22,7 +23,9 @@
         <input name="username" id="username" required>
         <label for="password">password</label>
         <input type="password" name="password" id="password" required>
-        <input type="submit" name="submit" value="log in">
+        <label for="password_confirm">confirm password</label>
+        <input type="password" name="password_confirm" id="password_confirm" required>
+        <input type="submit" name="submit" value="register">
     </form>
 </div>
 {% endblock %}

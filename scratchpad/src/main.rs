@@ -5,14 +5,20 @@ use sdl2::{
     self,
     event::Event,
     image::LoadTexture,
+    keyboard::Keycode,
     pixels::Color,
     rect::{Point, Rect},
-    render::{Canvas, Texture, TextureCreator},
+    render::{BlendMode, Canvas, RenderTarget, Texture, TextureCreator},
     ttf::Font,
 };
 
-fn text_box<'a, T>(t: &str, font: &Font, texture_creator: &'a TextureCreator<T>) -> Texture<'a> {
-    let surf = font.render(t).blended::<'a, _>(Color::BLACK).unwrap();
+fn text_box<'a, T>(
+    t: &str,
+    font: &Font,
+    color: Color,
+    texture_creator: &'a TextureCreator<T>,
+) -> Texture<'a> {
+    let surf = font.render(t).blended::<'a, _>(color).unwrap();
     texture_creator.create_texture_from_surface(surf).unwrap()
 }
 
@@ -53,19 +59,26 @@ fn main() {
     canvas.present();
 
     let mut event_pump = sdl_context.event_pump().unwrap();
-    let mut texture_creator = canvas.texture_creator();
+    let texture_creator = canvas.texture_creator();
 
     // program state enumeration, containing buffers for the text the user
     // is currently typing
     enum TextState {
-        Login { userbuf: String, passbuf: String },
-        Scratchpad { textbuf: String },
+        Login {
+            userbuf: String,
+            passbuf: String,
+            pass_selected: bool,
+        },
+        Scratchpad {
+            textbuf: String,
+        },
     }
     impl TextState {
         fn login() -> Self {
             Self::Login {
                 userbuf: String::new(),
                 passbuf: String::new(),
+                pass_selected: false,
             }
         }
         fn scratchpad() -> Self {
@@ -75,7 +88,7 @@ fn main() {
         }
     }
     // the current program state
-    let mut state = TextState::scratchpad();
+    let mut state = TextState::login();
     let mut priority: Priority = Priority::LOW;
 
     // texture assets
@@ -92,6 +105,9 @@ fn main() {
     let high_tex = texture_creator
         .load_texture(assets_path.join("high.svg"))
         .unwrap();
+    let rect_tex = texture_creator
+        .load_texture(assets_path.join("rect.svg"))
+        .unwrap();
 
     let font_context = sdl2::ttf::init().unwrap();
     let font = font_context
@@ -100,6 +116,8 @@ fn main() {
     let big_font = font_context
         .load_font(assets_path.join("Orbit-Regular.ttf"), 32)
         .unwrap();
+
+    let client = reqwest::blocking::Client::new();
 
     'running: loop {
         canvas.set_draw_color(Color::RGB(255, 255, 255));
@@ -122,51 +140,67 @@ fn main() {
             button_width,
             button_height,
         );
-
-        let client = reqwest::blocking::Client::new();
+        const INPUT_FIELD_HEIGHT: u32 = 30;
+        const INPUT_FIELD_WIDTH: u32 = 200;
+        let username_input_rect = Rect::from_center(
+            Point::new(
+                (SCREEN_WIDTH / 2) as i32,
+                (SCREEN_HEIGHT / 2 - BETWEEN_PADDING) as i32,
+            ),
+            INPUT_FIELD_WIDTH,
+            INPUT_FIELD_HEIGHT,
+        );
+        let password_input_rect = Rect::from_center(
+            Point::new(
+                (SCREEN_WIDTH / 2) as i32,
+                (SCREEN_HEIGHT / 2 + INPUT_FIELD_HEIGHT) as i32,
+            ),
+            INPUT_FIELD_WIDTH,
+            INPUT_FIELD_HEIGHT,
+        );
 
         // process input events
         for event in event_pump.poll_iter() {
             match event {
                 Event::Quit { .. } => break 'running,
-                Event::TextInput {
+                Event::TextEditing {
                     timestamp,
                     window_id,
                     text,
+                    start,
+                    length,
                 } => match &mut state {
-                    TextState::Login { userbuf, passbuf } => {
-                        todo!()
+                    TextState::Login {
+                        userbuf,
+                        passbuf,
+                        pass_selected,
+                    } => {
+                        dbg!("text editing!");
+                        if *pass_selected {
+                            *passbuf = text;
+                        } else {
+                            *userbuf = text;
+                        }
                     }
-                    TextState::Scratchpad { textbuf } => textbuf.push_str(&text),
+                    TextState::Scratchpad { textbuf } => *textbuf = text,
                 },
-                // Event::TextEditing {
-                //     timestamp,
-                //     window_id,
-                //     text,
-                //     start,
-                //     length,
-                // } => match &mut state {
-                //     TextState::Login { userbuf, passbuf } => {
-                //         todo!()
-                //     }
-                //     TextState::Scratchpad { textbuf } => {
-                //         textbuf.clear();
-                //         textbuf.push_str(&text)
-                //     }
-                // },
-                Event::MouseButtonDown {
-                    timestamp,
-                    window_id,
-                    which,
-                    mouse_btn,
-                    clicks,
-                    x,
-                    y,
+                Event::KeyDown {
+                    keycode: Some(Keycode::TAB),
+                    ..
                 } => {
+                    if let TextState::Login { pass_selected, .. } = &mut state {
+                        *pass_selected = !*pass_selected
+                    }
+                }
+                Event::MouseButtonDown { x, y, .. } => {
                     let p = Point::new(x, y);
                     match &mut state {
-                        TextState::Login { userbuf, passbuf } => {
-                            todo!()
+                        TextState::Login {
+                            userbuf,
+                            passbuf,
+                            pass_selected,
+                        } => {
+                            // TODO
                         }
                         TextState::Scratchpad { textbuf } => {
                             if priority_button_rect.contains_point(p) {
@@ -174,7 +208,7 @@ fn main() {
                                 priority = ((priority as u32 + 1) % 3).try_into().unwrap();
                             } else if jot_button_rect.contains_point(p) {
                                 // the jot button was pressed
-                                let req = lib::NotePost {
+                                let req = lib::NoteRequest {
                                     user_id: 2, // FIXME
                                     text: textbuf.clone(),
                                     priority,
@@ -184,6 +218,8 @@ fn main() {
                                     .json(&req)
                                     .send()
                                     .unwrap();
+                                res.error_for_status()
+                                    .expect_err("could not access server!");
                                 textbuf.clear();
                             }
                         }
@@ -205,13 +241,64 @@ fn main() {
             .copy(&priority_tex, None, priority_button_rect)
             .unwrap();
 
-        if let TextState::Scratchpad { textbuf } = &state {
-            if !textbuf.is_empty() {
-                let tb_tex = text_box(&textbuf, &font, &texture_creator);
+        match &state {
+            TextState::Scratchpad { textbuf } => {
+                if !textbuf.is_empty() {
+                    let tb_tex = text_box(&textbuf, &font, Color::BLACK, &texture_creator);
+                    copy_unscaled(
+                        &mut canvas,
+                        Point::new(EDGE_PADDING as i32, EDGE_PADDING as i32),
+                        &tb_tex,
+                    );
+                }
+            }
+            TextState::Login {
+                userbuf,
+                passbuf,
+                pass_selected,
+            } => {
+                // darken the background
+                canvas.set_draw_color(Color::RGBA(0, 0, 0, 100));
+                canvas.set_blend_mode(BlendMode::Blend);
+                canvas
+                    .fill_rect(Rect::new(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT))
+                    .unwrap();
+
+                // draw the box for login inputs
+                canvas.set_blend_mode(BlendMode::None);
+                let q = rect_tex.query();
                 copy_unscaled(
                     &mut canvas,
-                    Point::new(EDGE_PADDING as i32, EDGE_PADDING as i32),
-                    &tb_tex,
+                    Point::new(
+                        (SCREEN_WIDTH - q.width) as i32 / 2,
+                        (SCREEN_HEIGHT - q.height) as i32 / 2,
+                    ),
+                    &rect_tex,
+                );
+
+                // draw welcome text
+                copy_unscaled(
+                    &mut canvas,
+                    Point::new(60, SCREEN_HEIGHT as i32 / 2 - 90),
+                    &text_box("Welcome!", &big_font, Color::BLACK, &texture_creator),
+                );
+
+                input_field(
+                    userbuf,
+                    "username",
+                    &font,
+                    &username_input_rect,
+                    &mut canvas,
+                    &texture_creator,
+                );
+
+                input_field(
+                    passbuf,
+                    "password",
+                    &font,
+                    &password_input_rect,
+                    &mut canvas,
+                    &texture_creator,
                 );
             }
         }
@@ -219,4 +306,30 @@ fn main() {
         canvas.present();
         std::thread::sleep(Duration::new(0, 1_000_000_000u32 / 60));
     }
+}
+
+fn input_field<T: RenderTarget, S>(
+    input: &str,
+    default: &str,
+    font: &Font,
+    rect: &Rect,
+    canvas: &mut Canvas<T>,
+    texture_creator: &TextureCreator<S>,
+) {
+    canvas.set_draw_color(Color::WHITE);
+    canvas.set_blend_mode(BlendMode::None);
+    canvas.fill_rect(rect.clone()).unwrap();
+    canvas.set_draw_color(Color::BLACK);
+    canvas.draw_rect(rect.clone()).unwrap();
+
+    let (text, text_color): (&str, _) = if input.is_empty() {
+        (default, Color::GRAY)
+    } else {
+        (input, Color::BLACK)
+    };
+    copy_unscaled(
+        canvas,
+        rect.top_left().offset(6, 3),
+        &text_box(text, &font, text_color, &texture_creator),
+    );
 }

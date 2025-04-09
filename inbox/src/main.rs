@@ -1,68 +1,77 @@
+// THINGS TO DO
+// TODO support adding notes from web dashboard
+// TODO support viewing archived notes
+// TODO animations for dismissing notes
+// TODO password hashing
+// TODO better security for adding notes
+// TODO favicon
+// TODO fix style for login form
+
 use std::path::{Path, PathBuf};
 
-use rocket::{fs::NamedFile, response::Redirect, serde::json::Json, Build, Rocket};
+use rocket::{
+    fs::NamedFile, request::FlashMessage, response::Redirect,
+    serde::json::Json, Build, Rocket,
+};
 use rocket_dyn_templates::{context, Template};
 
-// TODO bulletin?
-
 pub mod auth;
-pub mod database;
+pub mod db;
 
 #[macro_use]
 extern crate rocket;
 
 #[get("/")]
-async fn home_authenticated(user: auth::User) -> Template {
+async fn home(user: auth::User, error: Option<FlashMessage<'_>>) -> Template {
     Template::render(
         "home",
         context! {
-            username: user.name,
-            notes: database::query_notes(user.id).unwrap(),
+            user: Some(&user),
+            error: error,
+            notes: db::query_notes(user.id).unwrap(),
         },
     )
 }
 
 #[get("/", rank = 2)]
-async fn home() -> Redirect {
+async fn login_redirect() -> Redirect {
     Redirect::to(uri!(auth::login))
 }
 
 #[get("/static/<file..>")]
 async fn static_file(file: PathBuf) -> Option<NamedFile> {
-    NamedFile::open(Path::new("inbox/static/").join(file)).await.ok()
+    NamedFile::open(Path::new("inbox/static/").join(file))
+        .await
+        .ok()
 }
 
+// FIXME make this secure - check cookie to see that the user is logged in to
+// the right account
 #[post("/dismiss/<note_id>")]
-async fn dismiss(note_id: u32) {
-    database::dismiss_note(note_id).unwrap();
+async fn dismiss(user: auth::User, note_id: u64) {
+    db::dismiss_note(note_id, user.id).unwrap();
 }
 
+// FIXME is there any way to make this secure?
 #[post("/post", data = "<input>")]
-async fn post(input: Json<lib::NotePost>) {
-    database::post_note(input.user_id, &input.text, input.priority).unwrap();
+async fn post(input: Json<lib::NoteRequest>) {
+    db::post_note(input.user_id, &input.text, input.priority).unwrap();
 }
 
 #[launch]
 fn rocket() -> Rocket<Build> {
-    database::init().unwrap();
-
-    // use lib::Priority;
-    // database::post_note(
-    //     2,
-    //     "this is my first post with a medium priority!",
-    //     Priority::MED,
-    // )
-    // .unwrap();
+    db::init().unwrap();
 
     rocket::build()
         .mount(
             "/",
             routes![
-                home_authenticated,
                 home,
-                auth::login_authenticated,
+                login_redirect,
                 auth::login,
                 auth::login_post,
+                auth::register,
+                auth::register_post,
                 auth::logout,
                 static_file,
                 dismiss,
