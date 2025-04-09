@@ -1,38 +1,38 @@
 <!doctype html>
 
 <html lang="en">
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-        <title>{% block title %}{% endblock %}</title>
-        <meta name="description" content="{% block description %}{% endblock %}">
+    <title>{% block title %}{% endblock %}</title>
+    <meta name="description" content="{% block description %}{% endblock %}" />
 
-        <base href="{{ BASE_URL }}">
+    <base href="{{ BASE_URL }}" />
 
-        <link rel="icon" href="static/favicons/favicon.ico">
-        <link rel="stylesheet" href="static/style.css">
-        <script src="https://kit.fontawesome.com/ca68633975.js" crossorigin="anonymous"></script>
-    </head>
+    <link rel="icon" href="static/pencil.png" />
+    <link rel="stylesheet" href="static/style.css" />
+    <script
+      src="https://kit.fontawesome.com/ca68633975.js"
+      crossorigin="anonymous"
+    ></script>
+  </head>
 
-    <body>
-        <div id="contents">
-            {% if username is defined %}
-            <span style="float: right;">
-                {{ username }}
-                <a href="/logout">(logout)</a>
-            </span>
-            {% endif %}
-
-            <h1>
-                <a href="/">jot</a>
-            </h1>
-            {% block contents %}{% endblock %}
-        </div>
-        <footer>
-            <a href="https://github.com/breitnw/jot" target="_blank" class="no-underline">
-                <i class="fa-brands fa-github"></i> 2025 breitnw
-            </a>
-        </footer>
-    </body>
+  <body>
+    <div id="contents">{% block contents %}{% endblock %}</div>
+    <footer>
+      <a
+        href="https://github.com/breitnw/jot"
+        target="_blank"
+        class="no-underline"
+      >
+        <i class="fa-brands fa-github"></i> 2025 breitnw
+      </a>
+    </footer>
+  </body>
+  <script>
+    function dismissError() {
+      document.getElementById("error").style.display = "none";
+    }
+  </script>
 </html>

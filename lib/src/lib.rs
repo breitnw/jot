@@ -4,20 +4,27 @@ use serde::{Deserialize, Serialize};
 /// A single note and its metadata
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Note {
-    pub note_id: u32,
-    pub user_id: u32,
+    pub note_id: u64,
+    pub user_id: u64,
     pub text: String,
     pub timestamp: String,
     pub priority: Priority,
     pub dismissed: bool,
 }
 
-/// A request to post a note
+/// A request to post a note from the scratchpad
 #[derive(Serialize, Deserialize, Debug)]
-pub struct NotePost {
-    pub user_id: u32,
+pub struct NoteRequest {
+    pub user_id: u64,
     pub text: String,
     pub priority: Priority,
+}
+
+/// A request to login from the scratchpad
+#[derive(Serialize, Deserialize, Debug)]
+pub struct LoginRequest {
+    pub username: String,
+    pub password: String,
 }
 
 /// The priority assigned to a note: either low, medium, or high

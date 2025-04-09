@@ -5,15 +5,24 @@
 {% block description %}Capture your fleeting notes{% endblock %}
 
 {% block contents %}
-<form method="post">
-    <label for="username">Username</label>
-    <input name="username" id="username" required>
-    <br>
-    <label for="password">Password</label>
-    <input type="password" name="password" id="password" required>
-    <br>
-    <br>
-    <input type="submit" name="submit" value="Log In">
-    <input type="submit" name="submit" value="Register">
-</form>
+<div class="centered-form">
+    <h2>
+        <img src="static/pencil.png" alt="logo" class="form-pencil">
+        welcome back!</h2>
+    <p>
+    Enter your username and password to log in. Don't have an account yet? Register <a href="/register">here</a>.
+    </p>
+    {% if error != none %}
+    <p style="color:red; font-size:small;">
+        error: {{ error.message }}
+    </p>
+    {% endif %}
+    <form method="post">
+        <label for="username">username</label>
+        <input name="username" id="username" required>
+        <label for="password">password</label>
+        <input type="password" name="password" id="password" required>
+        <input type="submit" name="submit" value="log in">
+    </form>
+</div>
 {% endblock %}

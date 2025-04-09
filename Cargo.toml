@@ -1,5 +1,7 @@
 [workspace]
 members = ["scratchpad", "inbox", "lib"]
+resolver = "2"
+edition = "2021"
 
 [workspace.package]
 name = "jot"

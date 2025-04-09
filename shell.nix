@@ -13,12 +13,20 @@ in pkgs.mkShell rec {
     rust-analyzer
     clippy
 
+    # web tools
+    nodejs
+    nodePackages.prettier
+    vscode-langservers-extracted
+    html-tidy
+    stylelint
+    jsbeautifier
+
     # libraries
     sqlite
     SDL2
     SDL2_ttf
     SDL2_image
-    openssl
+    openssl.dev
 
     # other tools
     sqlite-web
