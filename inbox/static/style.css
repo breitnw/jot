@@ -57,6 +57,23 @@ footer a {
   color: var(--fg-color-light);
 }
 
+#app {
+  display: flex;
+  gap: 2rem;
+  flex-direction: row;
+  flex-wrap: wrap;
+}
+
+#sidebar {
+  flex-grow: 1;
+  flex-basis: 8rem;
+}
+
+#notes {
+  flex-grow: 3;
+  flex-basis: 16rem;
+}
+
 /* notes */
 
 .box {
@@ -82,7 +99,7 @@ button {
   color: var(--fg-color);
 }
 
-.note button:hover {
+button:hover {
   transform: scale(1.2);
 }
 
@@ -115,6 +132,19 @@ button {
   position: relative;
   top: 7px;
   padding-right: 4px;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: -o-crisp-edges;
+  image-rendering: -webkit-optimize-contrast;
+  -ms-interpolation-mode: nearest-neighbor;
+}
+
+.home-pencil {
+  image-rendering: -moz-crisp-edges;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: -o-crisp-edges;
+  image-rendering: -webkit-optimize-contrast;
+  -ms-interpolation-mode: nearest-neighbor;
 }
 
 /* sidebar */
@@ -138,7 +168,7 @@ button {
   transition: background-color 0.2s ease-in-out;
 }
 
-.jot-textarea-container button[type="submit"] {
+.jot-textarea-container button[type="button"] {
   position: absolute;
   right: 10px;
   bottom: 5px;

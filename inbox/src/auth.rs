@@ -7,14 +7,15 @@ use rocket::{
     serde::{Deserialize, Serialize},
     Request,
 };
+use rocket_db_pools::Connection;
 use rocket_dyn_templates::{context, Template};
 
-use crate::db;
+use crate::db::{self, DB};
 
 /// A user and their ID
 #[derive(Deserialize, Serialize, Debug)]
 pub struct User {
-    pub id: u64,
+    pub id: u32,
     pub name: String,
 }
 
@@ -25,11 +26,17 @@ impl<'r> FromRequest<'r> for User {
     async fn from_request(
         req: &'r Request<'_>,
     ) -> request::Outcome<Self, Self::Error> {
-        req.cookies()
+        let id: Option<u32> = req
+            .cookies()
             .get_private("user_id")
-            .and_then(|cookie| cookie.value().parse().ok())
-            .and_then(|id| db::get_user(id).ok())
-            .or_forward(Status::Unauthorized)
+            .and_then(|cookie| cookie.value().parse().ok());
+
+        let mut db: Connection<DB> = req.guard().await.unwrap();
+        let db_res = match id {
+            Some(id) => db::get_user(&mut db, id).await.ok(),
+            None => None,
+        };
+        db_res.or_forward(Status::Unauthorized)
     }
 }
 
@@ -57,13 +64,14 @@ pub struct LoginData<'r> {
 
 #[post("/login", data = "<input>")]
 pub async fn login_post(
+    mut db: Connection<DB>,
     input: Form<LoginData<'_>>,
     jar: &CookieJar<'_>,
 ) -> Result<Redirect, Flash<Redirect>> {
-    let user_res = db::login(input.username, input.password);
+    let user_res = db::login(&mut db, input.username, input.password).await;
     if let Ok(user) = user_res {
         jar.add_private(Cookie::new("user_id", user.id.to_string()));
-        Ok(Redirect::to(uri!(crate::home)))
+        Ok(Redirect::to(uri!(crate::inbox)))
     } else {
         Err(Flash::error(
             Redirect::to(uri!(login)),
@@ -81,6 +89,7 @@ pub struct RegisterData<'r> {
 
 #[post("/register", data = "<input>")]
 pub async fn register_post(
+    mut db: Connection<DB>,
     input: Form<RegisterData<'_>>,
     jar: &CookieJar<'_>,
 ) -> Result<Redirect, Flash<Redirect>> {
@@ -99,7 +108,8 @@ pub async fn register_post(
         ));
     }
     // register the user
-    let register_res = db::register(input.username, input.password);
+    let register_res =
+        db::register(&mut db, input.username, input.password).await;
     if register_res.is_err() {
         return Err(Flash::error(
             Redirect::to(uri!(register)),
@@ -107,10 +117,10 @@ pub async fn register_post(
         ));
     }
     // log the user in
-    let user_res = db::login(input.username, input.password);
+    let user_res = db::login(&mut db, input.username, input.password).await;
     if let Ok(user) = user_res {
         jar.add_private(Cookie::new("user_id", user.id.to_string()));
-        Ok(Redirect::to(uri!(crate::home)))
+        Ok(Redirect::to(uri!(crate::inbox)))
     } else {
         Err(Flash::error(
             Redirect::to(uri!(login)),
@@ -122,5 +132,5 @@ pub async fn register_post(
 #[get("/logout")]
 pub async fn logout(jar: &CookieJar<'_>) -> Redirect {
     jar.remove_private("user_id");
-    Redirect::to(uri!(login))
+    Redirect::to(uri!(crate::landing))
 }

@@ -6,7 +6,9 @@ edition = "2021"
 [dependencies]
 chrono = "0.4.40"
 rocket = { version = "0.5.1", features = ["secrets", "json"] }
-rusqlite = "0.34.0"
-lib = { path = "../lib" }
 rocket_dyn_templates = { version = "0.2.0", features = ["minijinja"] }
+rocket_db_pools = { version = "0.2.0", features = ["sqlx_sqlite"] }
+
+lib = { path = "../lib" }
 serde = { version = "1.0.219", features = [ "derive" ] }
+argon2 = "0.5.3"

@@ -1,0 +1,58 @@
+<!doctype html>
+
+{% extends 'base' %} {% block title %}jot{% endblock %} {% block description %}Capture your fleeting thoughts{% endblock
+%} {% block contents %}
+<div id="header">
+
+  <span style="float: right">
+  {% if user is not none %}
+    {{ user.name }} (<a href="logout">logout</a>)
+  {% else %}
+    <a href="login">log in</a> or <a href="register">register</a>
+  {% endif %}
+  </span>
+</div>
+<img src="static/jot.png" alt="logo" class="home-pencil"
+  style="display: block; margin-left: auto; margin-right: auto; margin-top: 3rem; margin-bottom: 4rem; scale: 2;" />
+<p style="text-align: center; margin-bottom: 3rem; color: var(--fg-color-light);">
+  <i><b >
+  Empty out the back of your mind; you should be living in the front.
+  </b></i>
+  </p>
+<h1>Welcome to Jot!</h1>
+<p>
+  With the sheer number of distractions modern technologies pose, even a task as simple as jotting down a note can
+  lead us down a path of distraction. Sometimes, we even forget why we opened our phone in the first place. Jot aims
+  to address this issue by stripping note-taking down to its barest elements, enabling you to write down your idea as
+  fast as possible and file it away whenever you’re ready.
+</p>
+
+<h2>How it works</h2>
+<p>
+  The crux of Jot is its separation into two entirely distinct applications: one for taking notes (the Scratchpad),
+  and one for viewing and filing them (the Inbox). The Scratchpad is as minimalistic as it gets: you have a text box, a
+  priority button, and a Jot button, which uploads your note to the cloud (with a fancy animation, of course). You
+  cannot view past notes, add metadata to notes, or anything else that might distract you from your task: writing down
+  that idea as quickly as possible.
+</p>
+<p>
+  The Inbox is where you address your ideas. It’s meant to be used on your desktop—when you really have time to parse
+  through, refile, or address your thoughts. Notes are sorted by the priority you assigned earlier, so you’ll always
+  see your most important ideas first. When you’re done giving your idea its forever home, you can dismiss it from Jot.
+</p>
+
+<h2>Why Jot?</h2>
+<ul>
+  <li><b>Everywhere and anywhere:</b> Your notes live on the cloud, so you can view them anywhere immediately after writing them.</li>
+  <li><b>Made to be quick:</b> Jot is streamlined and distraction-free, making note capture nigh instantaneous.</li>
+  <li><b>Never forget what you need:</b> Keeping your inbox clean is easy, meaning you never lose track of a note.</li>
+  <li><b>Absolutely private: </b> Your data is stored securely, and is never sold to anyone.
+  <li><b>You are in control:</b> Jot will never have AI integration in any form. They're your thoughts, so you should be in control of them.</li>
+  <li><b>Free and open source:</b> Jot is GPL-licensed, meaning that you are free to modify and redistribute it to suit
+    your needs. You can even deploy your own inbox server, if you're so inclined!</li>
+</ul>
+
+<h2>Get started!</h2>
+To start taking notes, <a href="/login">log in</a> or <a href="/register">register</a>.
+
+{% endblock %}

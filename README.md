@@ -8,12 +8,13 @@ The crux of Jot is its separation into two entirely distinct applications: one f
 
 The Inbox is where you address your ideas. It’s meant to be used on your desktop—when you really have time to parse through, refile, or address your thoughts. Notes are sorted by the priority you assigned earlier, so you’ll always see your most important ideas first. When you’re done giving your idea its forever home, you can dismiss it from Jot.
 
+<!-- TODO talk about creating database -->
+
 ## Technologies used
 Jot runs on Rust. The following libraries were used to create it: 
 
 - [Rocket](https://rocket.rs/), for the API and Inbox backend
 - [SDL2](https://crates.io/crates/sdl2), for rendering the Scratchpad
 - [Chrono](https://crates.io/crates/chrono), for date and time handling
-- [Rusqlite](https://crates.io/crates/rusqlite), for managing notes and users in a SQLite database
 - [MiniJinja](https://github.com/mitsuhiko/minijinja), for HTML templating
 - [Reqwest](https://github.com/seanmonstar/reqwest), for making HTTP requests from the scratchpad

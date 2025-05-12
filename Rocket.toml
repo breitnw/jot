@@ -7,3 +7,6 @@ template_dir = "inbox/templates"
 address = "127.0.0.1"
 port = 80
 template_dir = "inbox/templates"
+
+[default.databases.db]
+url = "inbox/db.sqlite"

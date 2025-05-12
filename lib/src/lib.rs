@@ -4,8 +4,8 @@ use serde::{Deserialize, Serialize};
 /// A single note and its metadata
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Note {
-    pub note_id: u64,
-    pub user_id: u64,
+    pub note_id: u32,
+    pub user_id: u32,
     pub text: String,
     pub timestamp: String,
     pub priority: Priority,
@@ -15,7 +15,6 @@ pub struct Note {
 /// A request to post a note from the scratchpad
 #[derive(Serialize, Deserialize, Debug)]
 pub struct NoteRequest {
-    pub user_id: u64,
     pub text: String,
     pub priority: Priority,
 }
@@ -35,13 +34,13 @@ pub enum Priority {
     HIGH,
 }
 
-impl TryFrom<u32> for Priority {
+impl TryFrom<u8> for Priority {
     type Error = ();
-    fn try_from(v: u32) -> Result<Self, Self::Error> {
+    fn try_from(v: u8) -> Result<Self, Self::Error> {
         match v {
-            x if x == Priority::LOW as u32 => Ok(Priority::LOW),
-            x if x == Priority::MED as u32 => Ok(Priority::MED),
-            x if x == Priority::HIGH as u32 => Ok(Priority::HIGH),
+            x if x == Priority::LOW as u8 => Ok(Priority::LOW),
+            x if x == Priority::MED as u8 => Ok(Priority::MED),
+            x if x == Priority::HIGH as u8 => Ok(Priority::HIGH),
             _ => Err(()),
         }
     }

@@ -12,12 +12,11 @@
 
     <link rel="icon" href="static/pencil.png" />
     <link rel="stylesheet" href="static/style.css" />
-    <script
-      src="https://kit.fontawesome.com/ca68633975.js"
-      crossorigin="anonymous"
-    ></script>
-  </head>
 
+    {# icons #}
+    <script src="https://kit.fontawesome.com/ca68633975.js" crossorigin="anonymous"></script>
+
+    {% block extrascripts %}{% endblock %}
   <body>
     <div id="contents">{% block contents %}{% endblock %}</div>
     <footer>
