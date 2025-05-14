@@ -6,7 +6,7 @@
 
   <span style="float: right">
   {% if user is not none %}
-    {{ user.name }} (<a href="logout">logout</a>)
+    {{ user.name }} (<a href="logout">log out</a>)
   {% else %}
     <a href="login">log in</a> or <a href="register">register</a>
   {% endif %}

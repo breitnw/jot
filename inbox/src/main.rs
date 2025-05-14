@@ -1,9 +1,23 @@
 // THINGS TO DO
-// TODO support adding notes from web dashboard
-// TODO support viewing archived notes
-// TODO animations for dismissing notes
+
+// IMPORTANT STUFF
+// TODO support viewing archived notes (send all to client, checkboxes toggle)
 // TODO password hashing
-// TODO better security for adding notes
+// TODO priority selection from web dashboard
+// TODO properly deploy with tokens and stuff, don't share Rocket.toml on git
+
+// POLISH (HARDER)
+// TODO custom themes?
+// TODO animations for adding and dismissing notes
+// TODO see if there's a more efficient way to add/remove notes without
+//      re-fetching everything
+
+// POLISH (EASIER)
+// TODO "you're all caught up" message
+// TODO enter to submit notes
+// TODO error messages when can't connect to server
+// TODO loading spinner
+// TODO you should actually be able to get to the inbox from the homepage
 
 use std::path::{Path, PathBuf};
 
