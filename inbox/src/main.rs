@@ -39,16 +39,6 @@ extern crate rocket;
 // USER-FACING ENDPOINTS =======================================================
 
 #[get("/")]
-async fn landing(user: Option<auth::User>) -> Template {
-    Template::render(
-        "landing",
-        context! {
-            user: user
-        },
-    )
-}
-
-#[get("/inbox")]
 async fn inbox(user: auth::User, error: Option<FlashMessage<'_>>) -> Template {
     Template::render(
         "inbox",
@@ -59,9 +49,14 @@ async fn inbox(user: auth::User, error: Option<FlashMessage<'_>>) -> Template {
     )
 }
 
-#[get("/inbox", rank = 2)]
-async fn login_redirect() -> Redirect {
-    Redirect::to(uri!(auth::login))
+#[get("/", rank = 2)]
+async fn landing(user: Option<auth::User>) -> Template {
+    Template::render(
+        "landing",
+        context! {
+            user: user
+        },
+    )
 }
 
 #[get("/static/<file..>")]
@@ -108,7 +103,6 @@ fn rocket() -> Rocket<Build> {
                 // basic
                 landing,
                 inbox,
-                login_redirect,
                 static_file,
                 // authentication
                 auth::login,
