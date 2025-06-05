@@ -165,6 +165,7 @@ button:hover {
   background: var(--bg-color-dark);
   color: var(--fg-color);
   font-family: orbit;
+  font-variant-ligatures: no-common-ligatures;
   transition: background-color 0.2s ease-in-out;
   font-size: medium;
 }
